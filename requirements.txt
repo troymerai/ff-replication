@@ -4,3 +4,9 @@ pandas>=2.0
 scipy>=1.10
 statsmodels>=0.14
 matplotlib>=3.7
+
+# 데이터 수집
+pykrx>=1.0.45
+
+# 노트북 실행 (VS Code Jupyter 확장은 7.x와 호환 이슈가 있어 6.x 사용)
+ipykernel>=6.0,<7
