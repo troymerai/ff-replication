@@ -1,15 +1,24 @@
-# Python 3.12
+# Python 3.12 / Windows / VS Code + Jupyter
 
+
+# --- 수치·통계 코어 (5-0 GRS/HAC 엔진, 5b 회귀) ---
 numpy
 pandas
-scipy                 # GRS F-분포, MC KS검정
-matplotlib            # 노트북 시각화
+scipy
+statsmodels            # GRS F-검정, HAC(Newey-West) 표준오차
 
-# --- 데이터 소스 ---
-pykrx                 # KRX 시총·PBR·OHLCV (KRX_ID/KRX_PW)
-OpenDartReader        # 신규: OpenDART 재무제표 (DART_API_KEY) — requests/beautifulsoup4/lxml/xmltodict 자동 설치
-python-dotenv         # .env 로드
+# --- 시각화 (6c 히트맵·시기별 분해) ---
+matplotlib
 
-# --- 노트북 실행 ---
-ipykernel             # VS Code Jupyter 커널
+# --- 한국 데이터 수집 (5a Extract) ---
+pykrx                  # 가격·시총·종목리스트·KRX PBR (B/M 소스). KRX 로그인 필요
+OpenDartReader         # 가을 골드 BE 로더(지배주주지분). v0.1 B/M에는 미사용
+finance-datareader     # 폐지 이력(KRX-DELISTING)·현재상장(KRX-DESC)·폐지 종목 가격
+PublicDataReader       # ECOS 무위험 CD91(통계표 817Y002 / 항목 010502000)
 
+# --- 미국 baseline (6-pre) ---
+pandas-datareader      # Ken French Data Library 로더
+
+# --- 환경·실행 ---
+python-dotenv          # .env에서 KRX/OpenDART/ECOS 키 로드
+ipykernel              # Jupyter 커널
