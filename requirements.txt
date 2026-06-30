@@ -1,8 +1,5 @@
-# ff-replication · 직접 의존성 (top-level) · Python 3.12
-# 정확한 버전 고정은 venv 활성화 후 `pip freeze > requirements.txt` 로 재생성 권장(재현성).
-# 아래는 큐레이션 참고본 — 네 현재 파일과 다르면 버전 핀은 네 것을 유지하고 OpenDartReader 줄만 추가.
+# Python 3.12
 
-# --- 핵심 ---
 numpy
 pandas
 scipy                 # GRS F-분포, MC KS검정
@@ -16,6 +13,3 @@ python-dotenv         # .env 로드
 # --- 노트북 실행 ---
 ipykernel             # VS Code Jupyter 커널
 
-# --- 조건부 (해당 import가 실제로 있으면 유지, 없으면 삭제) ---
-# statsmodels         # ff_core의 HAC 표준오차를 statsmodels로 구현한 경우
-# pandas-datareader   # ff_data_us가 Ken French 데이터를 pandas-datareader로 받는 경우

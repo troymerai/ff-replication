@@ -32,3 +32,7 @@ Thumbs.db
 desktop.ini
 .vscode/
 .idea/
+
+# OpenDartReader 캐시 (corp code 매핑 — 자동 재생성)
+docs_cache/
+*opendartreader_corp_codes_*.pkl
