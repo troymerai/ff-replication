@@ -39,3 +39,4 @@ docs_cache/
 
 # Local cleanup work log (references removed identifiers; keep out of public repo)
 CLEANUP_REPORT.md
+CC_REPORT.md

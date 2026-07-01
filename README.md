@@ -38,6 +38,16 @@ Rationale for each construction choice — alternatives considered and Korean-ma
 
 Cross-sectional P/B data begin at different dates by market: KOSPI 2002-12, KOSDAQ 2005-12 (the latter is a genuine data onset, confirmed at the security level, not an endpoint artifact). The common KOSPI+KOSDAQ three-factor series therefore begins at the June 2006 sort (returns from 2006-07). A KOSPI-only long panel (returns from 2003-07) is reported separately as a longer-horizon supplement rather than spliced into the primary series. MKT–RF alone can extend to 1995; SMB and HML require B/M and are bound by the windows above.
 
+### Limitations (v0.1)
+
+The replication is deliberately faithful in construction but transparent about the biases that free, survivorship-incomplete data introduce:
+
+- **Returns are price returns, not dividend-inclusive total returns.** Fama–French uses total return. This is a conscious v0.1 simplification: high-dividend names are slightly under-measured, though the effect is largely offsetting within the long–short factors. A dividend (DPS) total-return path is planned for the gold phase.
+- **Split/rights handling without a corporate-action feed.** Adjusted daily prices are unavailable before ~2014 from the free sources, so monthly returns are built from stitched month-end cross-sections (close × shares) with splits, reverse-mergers, and bonus issues removed via market-cap continuity. Genuine capital raises (rights offerings, CB conversions) are approximated (their rights value is ignored); ambiguous share-count changes are logged. Implausible months (|return| > 300%, chiefly halted micro-caps) are dropped and logged.
+- **B/M from KRX-reported P/B (B/M ≈ 1/PBR),** not a decomposed book-equity figure; an OpenDART book-equity loader is planned.
+- **Survivorship.** Delisted names are held to their last trading day and dropped thereafter (no delisting-return adjustment, as that data is unavailable); results are framed as an upper bound on the survivorship-clean truth.
+- **Financials** are identified from current KRX industry classification applied to the past (financial-sector membership is stable); financial holding companies are excluded while industrial holding companies are retained.
+
 ## Repository structure
 
 ```
@@ -45,6 +55,10 @@ src/
   ff_core.py                 # GRS test + HAC (Newey–West) regression engine
   ff_data_us.py              # Kenneth French data loader
   validate_baseline.ipynb    # US baseline validation (25 regressions, GRS)
+  ff_kr_extract.py           # Korea E (Extract): E1–E8 raw KRX/ECOS/FDR loaders + resolver
+  ff_kr_transform.py         # Korea T (Transform): T1–T10 point-in-time clean panel
+  ff_kr_load.py              # Korea L (Load): §9 monthly-long panel + parquet/sqlite/csv
+  pilot_transform.py         # one-rebalance (2010-06) T+L pilot / validation harness
 tests/
   validate_core_mc.ipynb     # Monte Carlo validation of the engine (size + power)
 notebooks/
