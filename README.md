@@ -1,5 +1,7 @@
 # Fama–French Three-Factor Replication — US Validation and Korean Extension
 
+[한국어](README.ko.md) · **English**
+
 A faithful replication of the Fama–French (1993) three-factor model (MKT–RF, SMB, HML), validated against Kenneth French's published US benchmarks and extended to the Korean equity market (KOSPI + KOSDAQ) using freely available data sources.
 
 ## Overview
@@ -52,7 +54,7 @@ notebooks/
 probes/                        # KRX cross-section reliability checks
   probe_pbr_xsec_bottom.py       # cross-sectional P/B availability by date
   krx_fundamental_safe.py        # robust fetcher with blank-date walk-back
-  gate2_bm_stability.py          # B/M-source temporal stability
+  check_bm_stability.py          # B/M-source temporal stability
   probe_kosdaq_byticker_2003.py  # KOSDAQ early-period data existence
   probe_price_depth.py           # cross-sectional close-price depth
 ```
