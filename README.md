@@ -43,10 +43,10 @@ Cross-sectional P/B data begin at different dates by market: KOSPI 2002-12, KOSD
 The replication is deliberately faithful in construction but transparent about the biases that free, survivorship-incomplete data introduce:
 
 - **Returns are price returns, not dividend-inclusive total returns.** Fama–French uses total return. This is a conscious v0.1 simplification: high-dividend names are slightly under-measured, though the effect is largely offsetting within the long–short factors. A dividend (DPS) total-return path is planned for the gold phase.
-- **Split/rights handling without a corporate-action feed.** Adjusted daily prices are unavailable before ~2014 from the free sources, so monthly returns are built from stitched month-end cross-sections (close × shares) with splits, reverse-mergers, and bonus issues removed via market-cap continuity. Genuine capital raises (rights offerings, CB conversions) are approximated (their rights value is ignored); ambiguous share-count changes are logged. Implausible months (|return| > 300%, chiefly halted micro-caps) are dropped and logged.
+- **Split/rights handling without a corporate-action feed.** Adjusted daily prices are unavailable before ~2014 from the free sources, so monthly returns are built from stitched month-end cross-sections (close × shares). On a material share-count change the return is taken from market-cap continuity (cap_ratio − 1), which is bounded and correct for splits, reverse-mergers, and bonus issues (the split-contaminated per-share price ratio is never used). For a genuine capital raise (rights offering, CB conversion) that same cap return **overstates** the holder return by the new-capital inflow — a bounded, logged approximation (`share_change_capex`), since rights value cannot be recovered without a corporate-action feed. Implausible months (|return| > 300%, chiefly halted micro-caps and distressed reverse-mergers) are dropped and logged.
 - **B/M from KRX-reported P/B (B/M ≈ 1/PBR),** not a decomposed book-equity figure; an OpenDART book-equity loader is planned.
 - **Survivorship.** Delisted names are held to their last trading day and dropped thereafter (no delisting-return adjustment, as that data is unavailable); results are framed as an upper bound on the survivorship-clean truth.
-- **Financials** are identified from current KRX industry classification applied to the past (financial-sector membership is stable); financial holding companies are excluded while industrial holding companies are retained.
+- **Point-in-time sector/classification approximation.** Financials are identified from the union of the current KRX-DESC industry labels and the delisting-frame industry labels, applied to the past (financial-sector membership is stable); financial holding companies are excluded while industrial holding companies are retained. Likewise, the fiscal year-end used for the accounting lag is the current settle month applied historically. Non-December firms (< 2% of listings) take their B/M from the KRX December cross-section rather than their own fiscal close — a small, known timing mismatch that is logged; an OpenDART book-equity loader fixes it in the gold phase.
 
 ## Repository structure
 
@@ -58,7 +58,9 @@ src/
   ff_kr_extract.py           # Korea E (Extract): E1–E8 raw KRX/ECOS/FDR loaders + resolver
   ff_kr_transform.py         # Korea T (Transform): T1–T10 point-in-time clean panel
   ff_kr_load.py              # Korea L (Load): §9 monthly-long panel + parquet/sqlite/csv
+  ff_kr_orchestrate.py       # full-period driver: per-year chunked, resumable (process-per-chunk)
   pilot_transform.py         # one-rebalance (2010-06) T+L pilot / validation harness
+  boundary_pilots.py         # window/KOSDAQ-onset boundary validation (2003/2005/2006)
 tests/
   validate_core_mc.ipynb     # Monte Carlo validation of the engine (size + power)
 notebooks/

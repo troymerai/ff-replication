@@ -40,3 +40,17 @@ docs_cache/
 # Local cleanup work log (references removed identifiers; keep out of public repo)
 CLEANUP_REPORT.md
 CC_REPORT.md
+
+# E-layer parquet cache (regenerable KRX pulls; the resume substrate)
+cache/
+
+# Full-period ETL outputs — regenerable from code (repo keeps code + repro, not the bulk panel).
+# The 2010-06 pilot sample (results/panel_pilot_2010.*) is kept tracked as evidence.
+results/checkpoints/
+results/panel_primary.*
+results/panel_supplementary.*
+results/orchestrate_audit.json
+results/orchestrate_report.txt
+results/boundary_pilots.txt
+results/dryrun_interrupt.*
+scratch_pilot.txt
