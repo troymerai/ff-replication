@@ -1,22 +1,23 @@
 """
-ff_data_us.py — 켄 프렌치 미국 데이터 읽기 (미국 전용)
+ff_data_us.py — Ken French US data reader (US only)
 
-하는 일:
-  1) 켄 프렌치 압축파일/CSV에서 '월별' 구간만 떼어낸다
-       - 3팩터 파일      : 월별 Mkt-RF, SMB, HML, RF
-       - 25 포트폴리오 파일 : '월별 가치가중(Value Weighted)' 구간만
-  2) 퍼센트 → 소수 (÷100)
-  3) 빈 데이터(-99.99, -999) → NaN
-  4) 두 파일의 날짜를 맞춘다 (공통 달만)
-  5) 각 포트폴리오 수익에서 무위험이자(RF)를 빼 '초과수익'을 만든다
+What it does:
+  1) Extracts only the 'monthly' section from Ken French zip/CSV files
+       - 3-factor file       : monthly Mkt-RF, SMB, HML, RF
+       - 25-portfolio file   : only the 'monthly Value Weighted' section
+  2) Percent -> decimal (/100)
+  3) Missing data (-99.99, -999) -> NaN
+  4) Aligns the dates of the two files (common months only)
+  5) Subtracts the risk-free rate (RF) from each portfolio return to form 'excess returns'
 
-반환은 엔진(ff_core.summarize)이 그대로 받는 형태:
-    excess_returns : (T x 25) 초과수익
+The return shape is exactly what the engine (ff_core.summarize) expects:
+    excess_returns : (T x 25) excess returns
     factors        : (T x 3)  [Mkt-RF, SMB, HML]
-    rf             : (T,)     무위험이자 (참고용)
+    rf             : (T,)     risk-free rate (for reference)
 
-설계 메모: 줄 번호를 고정해두지 않는다. 켄 프렌치가 매달 새 줄을 덧붙여도
-줄 번호가 밀리므로, '구간 제목'과 'YYYYMM 줄' 패턴만으로 구간을 찾는다.
+Design note: line numbers are not hard-coded. Ken French appends a new row every
+month, which shifts line numbers, so sections are located purely by the 'section
+title' and the 'YYYYMM row' pattern.
 """
 
 from __future__ import annotations
@@ -30,18 +31,18 @@ import urllib.request
 import numpy as np
 import pandas as pd
 
-# 켄 프렌치 직접 다운로드 주소 (로컬에서 새로 받을 때만 사용)
+# Ken French direct download URLs (only used when fetching fresh data locally)
 FACTORS_URL = ("https://mba.tuck.dartmouth.edu/pages/faculty/"
                "ken.french/ftp/F-F_Research_Data_Factors_CSV.zip")
 PORTFOLIOS_URL = ("https://mba.tuck.dartmouth.edu/pages/faculty/"
                   "ken.french/ftp/25_Portfolios_5x5_CSV.zip")
 
-_DATE_ROW = re.compile(r"^\s*\d{6}\s*,")   # 'YYYYMM,' 로 시작하는 월별 데이터 줄
-_MISSING = [-99.99, -999]                  # 켄 프렌치 빈 데이터 표기
+_DATE_ROW = re.compile(r"^\s*\d{6}\s*,")   # monthly data row starting with 'YYYYMM,'
+_MISSING = [-99.99, -999]                  # Ken French missing-data markers
 
 
 def _read_text(path: str) -> str:
-    """경로가 .zip 이면 안의 CSV 하나를 읽고, 아니면 파일을 그대로 읽는다."""
+    """If the path is a .zip, read the single CSV inside it; otherwise read the file as-is."""
     if str(path).lower().endswith(".zip"):
         with zipfile.ZipFile(path) as z:
             name = next(n for n in z.namelist() if n.lower().endswith(".csv"))
@@ -51,8 +52,8 @@ def _read_text(path: str) -> str:
 
 
 def _collect_block(raw_lines, header_idx):
-    """칸 이름 줄(header_idx) 아래로 'YYYYMM,' 줄을 연속으로 모은다.
-       데이터가 시작된 뒤 비데이터 줄(빈 줄·다음 구간 제목·연별 줄)을 만나면 멈춘다."""
+    """Below the column-name row (header_idx), collect consecutive 'YYYYMM,' rows.
+       Once data has started, stop at the first non-data row (blank, next section title, annual row)."""
     header_line = raw_lines[header_idx].strip()
     data = []
     for ln in raw_lines[header_idx + 1:]:
@@ -64,8 +65,8 @@ def _collect_block(raw_lines, header_idx):
 
 
 def _parse_block(header_line, data_lines):
-    """칸 이름 줄 + 월별 데이터 줄들 → DataFrame.
-       날짜는 월(Period) 인덱스, 값은 퍼센트→소수."""
+    """Column-name row + monthly data rows -> DataFrame.
+       Dates become a monthly (Period) index; values are percent -> decimal."""
     csv_text = header_line + "\n" + "\n".join(data_lines)
     df = pd.read_csv(io.StringIO(csv_text), skipinitialspace=True,
                      na_values=_MISSING)
@@ -74,14 +75,14 @@ def _parse_block(header_line, data_lines):
                          format="%Y%m").dt.to_period("M")
     df = df.drop(columns="date")
     df.index = idx
-    df = df.replace(_MISSING, np.nan)        # 혹시 모를 잔여 표기 한 번 더
-    return df / 100.0                        # 퍼센트 → 소수
+    df = df.replace(_MISSING, np.nan)        # catch any leftover markers once more
+    return df / 100.0                        # percent -> decimal
 
 
 def _load_factors(path: str):
-    """3팩터 파일에서 월별 구간만. (factors[Mkt-RF,SMB,HML], rf) 반환."""
+    """Only the monthly section of the 3-factor file. Returns (factors[Mkt-RF,SMB,HML], rf)."""
     raw = _read_text(path).replace("\r", "").split("\n")
-    # 월별 칸 이름 줄 ',Mkt-RF,SMB,HML,RF' 를 찾는다 (그 위는 설명 글)
+    # Find the monthly column-name row ',Mkt-RF,SMB,HML,RF' (everything above it is descriptive text)
     h = next(i for i, ln in enumerate(raw) if ln.strip().startswith(",Mkt-RF"))
     header_line, data = _collect_block(raw, h)
     df = _parse_block(header_line, data)
@@ -90,10 +91,10 @@ def _load_factors(path: str):
 
 def _load_portfolios(path: str,
                      section="Average Value Weighted Returns -- Monthly"):
-    """25 포트폴리오 파일에서 지정 구간(기본=월별 가치가중)만 떼어 DataFrame."""
+    """Extract the given section (default = monthly value-weighted) from the 25-portfolio file."""
     raw = _read_text(path).replace("\r", "").split("\n")
-    s = next(i for i, ln in enumerate(raw) if section in ln)      # 구간 제목 줄
-    h = next(i for i in range(s + 1, len(raw)) if raw[i].strip())  # 그 다음 칸 이름 줄
+    s = next(i for i, ln in enumerate(raw) if section in ln)      # section title row
+    h = next(i for i in range(s + 1, len(raw)) if raw[i].strip())  # the next column-name row
     header_line, data = _collect_block(raw, h)
     return _parse_block(header_line, data)
 
@@ -101,24 +102,24 @@ def _load_portfolios(path: str,
 def load_ff_us(factors_path: str, portfolios_path: str,
                start: str | None = None, end: str | None = None):
     """
-    켄 프렌치 미국 데이터를 읽어 엔진 입력 형태로 돌려준다.
+    Read the Ken French US data and return it in the engine's input shape.
 
-    factors_path, portfolios_path : .zip 또는 .csv 경로
-    start, end                    : 'YYYY-MM' 표본 구간 자르기 (선택)
+    factors_path, portfolios_path : .zip or .csv paths
+    start, end                    : 'YYYY-MM' sample-window trimming (optional)
 
-    반환: (excess_returns[T x 25], factors[T x 3], rf[T])
+    Returns: (excess_returns[T x 25], factors[T x 3], rf[T])
     """
     factors, rf = _load_factors(factors_path)
     ports = _load_portfolios(portfolios_path)
 
-    # 날짜 맞추기 (공통 달만)
+    # Align dates (common months only)
     idx = factors.index.intersection(ports.index).sort_values()
     factors, rf, ports = factors.loc[idx], rf.loc[idx], ports.loc[idx]
 
-    # 초과수익 = 포트폴리오 수익 − 무위험이자
+    # excess return = portfolio return - risk-free rate
     excess = ports.sub(rf, axis=0)
 
-    # 표본 구간 자르기 (선택)
+    # Sample-window trimming (optional)
     if start is not None:
         excess, factors, rf = excess.loc[start:], factors.loc[start:], rf.loc[start:]
     if end is not None:
@@ -128,8 +129,8 @@ def load_ff_us(factors_path: str, portfolios_path: str,
 
 
 def download_ff_us(dest_dir: str = "."):
-    """(로컬 전용) 켄 프렌치에서 두 압축파일을 직접 받는다. 받은 경로 2개 반환.
-       ※ 이 함수는 인터넷이 되는 네 PC에서만 동작한다."""
+    """(Local only) Download the two zip files directly from Ken French. Returns the 2 saved paths.
+       Note: this function only works on a machine with internet access."""
     os.makedirs(dest_dir, exist_ok=True)
     paths = []
     for url in (FACTORS_URL, PORTFOLIOS_URL):
@@ -141,11 +142,11 @@ def download_ff_us(dest_dir: str = "."):
 
 def find_files(factors_name="F-F_Research_Data_Factors_CSV.zip",
                ports_name="25_Portfolios_5x5_CSV.zip"):
-    """data/ 또는 현재 폴더에서 두 zip을 찾아 (factors_path, ports_path) 반환."""
+    """Find the two zips in data/ or the current folder; return (factors_path, ports_path)."""
     def _find(name):
         for d in [".", "data", os.path.join("..", "data")]:
             p = os.path.join(d, name)
             if os.path.exists(p):
                 return p
-        raise FileNotFoundError(f"'{name}' 를 못 찾음. data/ 폴더에 두세요.")
+        raise FileNotFoundError(f"'{name}' not found. Place it in the data/ folder.")
     return _find(factors_name), _find(ports_name)

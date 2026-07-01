@@ -1,4 +1,4 @@
-# 파이썬 캐시 / 빌드
+# Python cache / build
 __pycache__/
 *.pyc
 *.pyo
@@ -7,32 +7,35 @@ __pycache__/
 build/
 dist/
 
-# 가상환경
+# Virtual environments
 venv/
 .venv/
 env/
 
-# 테스트 / 타입 / 커버리지 캐시
+# Test / type / coverage caches
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 .coverage
 htmlcov/
 
-# 노트북 체크포인트
+# Notebook checkpoints
 .ipynb_checkpoints/
 
-# 환경변수
+# Environment variables
 .env
 .env.local
 
-# OS / 에디터
+# OS / editor
 .DS_Store
 Thumbs.db
 desktop.ini
 .vscode/
 .idea/
 
-# OpenDartReader 캐시 (corp code 매핑 — 자동 재생성)
+# OpenDartReader cache (corp-code mapping, regenerated automatically)
 docs_cache/
 *opendartreader_corp_codes_*.pkl
+
+# Local cleanup work log (references removed identifiers; keep out of public repo)
+CLEANUP_REPORT.md

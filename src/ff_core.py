@@ -1,16 +1,17 @@
 """
-ff_core.py — Fama-French 검증 엔진 (데이터 소스 무관)
+ff_core.py — Fama-French validation engine (data-source agnostic)
 
-이 모듈은 P1 v0.1(미국 검증)과 P2(한국 복제)에서 공통으로 쓰인다.
-입력 규약만 맞추면 데이터 출처와 상관없이 동작한다:
-    - excess_returns : (T x N) DataFrame, 포트폴리오 i의 초과수익 (R_i - RF)
-    - factors        : (T x K) DataFrame, 팩터 수익률 [Mkt-RF, SMB, HML]
-                       (Mkt-RF는 초과수익, SMB/HML은 무비용 스프레드)
+This module is shared by both the US validation and the Korea replication.
+As long as the input conventions are met, it works regardless of where the
+data comes from:
+    - excess_returns : (T x N) DataFrame, excess return of portfolio i (R_i - RF)
+    - factors        : (T x K) DataFrame, factor returns [Mkt-RF, SMB, HML]
+                       (Mkt-RF is an excess return; SMB/HML are zero-cost spreads)
 
-핵심 함수:
-    time_series_regressions  : 포트폴리오별 시계열 회귀 (HAC t값 포함)
-    grs_test                 : Gibbons-Ross-Shanken (1989) 결합검정
-    summarize                : 위 둘을 묶어 대조용 표 + GRS 한 줄로 반환
+Key functions:
+    time_series_regressions  : per-portfolio time-series regression (with HAC t-stats)
+    grs_test                 : Gibbons-Ross-Shanken (1989) joint test
+    summarize                : bundles the two into a comparison table + one GRS line
 """
 
 from __future__ import annotations
@@ -22,7 +23,7 @@ from scipy import stats
 
 
 def _nw_lag(T: int) -> int:
-    """Newey-West(1994) 자동 시차 규칙: floor(4 * (T/100)^(2/9))."""
+    """Newey-West (1994) automatic lag rule: floor(4 * (T/100)^(2/9))."""
     return int(np.floor(4.0 * (T / 100.0) ** (2.0 / 9.0)))
 
 
@@ -31,28 +32,27 @@ def time_series_regressions(excess_returns: pd.DataFrame,
                             hac: bool = True,
                             hac_lags: int | None = None) -> dict:
     """
-    각 포트폴리오 i에 대해
+    For each portfolio i, fit
         R_i - RF = alpha_i + b*(Mkt-RF) + s*SMB + h*HML + eps
-    를 적합한다.
 
-    hac=True 이면 alpha_i의 t값을 Newey-West(HAC) 표준오차로 계산한다.
-    hac_lags=None 이면 _nw_lag(T) 자동 규칙을 쓴다.
+    If hac=True, the t-stat of alpha_i uses Newey-West (HAC) standard errors.
+    If hac_lags=None, the automatic _nw_lag(T) rule is used.
 
-    반환 dict:
-        alpha   (N,)      절편
-        beta    (N x K)   팩터 적재
-        resid   (T x N)   잔차 (GRS 입력)
-        alpha_t (N,)      alpha의 t값 (HAC 또는 OLS)
-        r2      (N,)       결정계수
-        T, N, K           표본 차원
-        names             포트폴리오 이름 리스트
+    Returns dict:
+        alpha   (N,)      intercepts
+        beta    (N x K)   factor loadings
+        resid   (T x N)   residuals (GRS input)
+        alpha_t (N,)      t-stat of alpha (HAC or OLS)
+        r2      (N,)       R-squared
+        T, N, K           sample dimensions
+        names             list of portfolio names
     """
     Y = excess_returns.values
     F = factors.values
     T, N = Y.shape
     K = F.shape[1]
 
-    X = sm.add_constant(F)  # T x (K+1), 1열은 절편
+    X = sm.add_constant(F)  # T x (K+1), first column is the intercept
 
     alpha = np.empty(N)
     beta = np.empty((N, K))
@@ -87,21 +87,21 @@ def grs_test(alpha: np.ndarray,
              resid: np.ndarray,
              factors: np.ndarray) -> dict:
     """
-    Gibbons-Ross-Shanken (1989) 결합검정.
-    귀무가설: N개 절편(alpha)이 동시에 0.
+    Gibbons-Ross-Shanken (1989) joint test.
+    Null hypothesis: the N intercepts (alpha) are jointly zero.
 
-    통계량 (정규성 가정하에 유한표본에서 정확히 F):
+    Statistic (exactly F in finite samples under normality):
         J = ((T - N - K) / N) * (a' Sigma^{-1} a) / (1 + mu' Omega^{-1} mu)
         J ~ F(N, T - N - K)
 
-    여기서
-        Sigma = (1/T) * resid' resid     (잔차 공분산, ML 추정량, 나눗수 T)
-        Omega = (1/T) * (f-mu)'(f-mu)     (팩터 공분산, ML 추정량, 나눗수 T)
-        mu    = 팩터 표본평균
-    나눗수를 T로 맞춰야 자유도가 정확히 (N, T-N-K)가 된다.
+    where
+        Sigma = (1/T) * resid' resid     (residual covariance, ML estimator, divisor T)
+        Omega = (1/T) * (f-mu)'(f-mu)     (factor covariance, ML estimator, divisor T)
+        mu    = factor sample means
+    The divisor must be T so the degrees of freedom are exactly (N, T-N-K).
 
-    반환 dict: F, p_value, dof1(=N), dof2(=T-N-K),
-              sharpe2(= mu' Omega^{-1} mu, 팩터 최대 샤프비 제곱)
+    Returns dict: F, p_value, dof1(=N), dof2(=T-N-K),
+                  sharpe2(= mu' Omega^{-1} mu, squared max Sharpe of the factors)
     """
     R = np.asarray(resid)
     f = np.asarray(factors)
@@ -118,7 +118,7 @@ def grs_test(alpha: np.ndarray,
     Sigma_inv = np.linalg.inv(Sigma)
     Omega_inv = np.linalg.inv(Omega)
 
-    sharpe2 = float(mu @ Omega_inv @ mu)     # 팩터로 달성 가능한 최대 샤프비^2
+    sharpe2 = float(mu @ Omega_inv @ mu)     # squared max Sharpe attainable from the factors
     quad = float(a @ Sigma_inv @ a)
 
     dof2 = T - N - K
@@ -134,10 +134,10 @@ def summarize(excess_returns: pd.DataFrame,
               hac: bool = True,
               hac_lags: int | None = None):
     """
-    v0.1/P2 공용 진입점.
-    포트폴리오별 (alpha, alpha_t, r2) 표와 GRS 한 줄을 함께 반환한다.
+    Shared entry point for the US validation and the Korea replication.
+    Returns a per-portfolio (alpha, alpha_t, r2) table together with one GRS line.
 
-    반환: (table_df, grs_dict, reg_dict)
+    Returns: (table_df, grs_dict, reg_dict)
     """
     reg = time_series_regressions(excess_returns, factors,
                                   hac=hac, hac_lags=hac_lags)

@@ -1,24 +1,24 @@
 # Python 3.12 / Windows / VS Code + Jupyter
 
 
-# --- 수치·통계 코어 (5-0 GRS/HAC 엔진, 5b 회귀) ---
+# --- Numerical / statistics core (GRS + HAC engine, time-series regressions) ---
 numpy
 pandas
 scipy
-statsmodels            # GRS F-검정, HAC(Newey-West) 표준오차
+statsmodels            # GRS F-test, HAC (Newey-West) standard errors
 
-# --- 시각화 (6c 히트맵·시기별 분해) ---
+# --- Visualization (heatmaps, sub-period decomposition) ---
 matplotlib
 
-# --- 한국 데이터 수집 (5a Extract) ---
-pykrx                  # 가격·시총·종목리스트·KRX PBR (B/M 소스). KRX 로그인 필요
-OpenDartReader         # 가을 골드 BE 로더(지배주주지분). v0.1 B/M에는 미사용
-finance-datareader     # 폐지 이력(KRX-DELISTING)·현재상장(KRX-DESC)·폐지 종목 가격
-PublicDataReader       # ECOS 무위험 CD91(통계표 817Y002 / 항목 010502000)
+# --- Korean market data collection ---
+pykrx                  # prices, market cap, ticker lists, KRX PBR (B/M source). Requires KRX login
+OpenDartReader         # book-equity (BE) loader (controlling-interest equity). Not used by the primary B/M path
+finance-datareader     # delisting history (KRX-DELISTING), current listings (KRX-DESC), delisted-stock prices
+PublicDataReader       # ECOS risk-free CD91 (statistics table 817Y002 / item 010502000)
 
-# --- 미국 baseline (6-pre) ---
-pandas-datareader      # Ken French Data Library 로더
+# --- US baseline ---
+pandas-datareader      # Ken French Data Library loader
 
-# --- 환경·실행 ---
-python-dotenv          # .env에서 KRX/OpenDART/ECOS 키 로드
-ipykernel              # Jupyter 커널
+# --- Environment / execution ---
+python-dotenv          # loads KRX/OpenDART/ECOS keys from .env
+ipykernel              # Jupyter kernel
