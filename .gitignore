@@ -49,6 +49,15 @@ cache/
 results/checkpoints/
 results/panel_primary.*
 results/panel_supplementary.*
+# 5b factor-layer outputs — regenerable from code (C0 monthly risk-free etc.)
+# (extension-agnostic: covers csv today and any future parquet of the same artifacts;
+#  results/ports25_* also covers the ports25_counts_* count grids)
+results/riskfree_monthly.*
+results/factors_*
+results/ports25_*
+results/cells2x3_*
+results/regression_*
+results/grs_summary.json
 results/orchestrate_audit.json
 results/orchestrate_report.txt
 results/boundary_pilots.txt

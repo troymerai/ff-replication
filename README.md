@@ -10,7 +10,31 @@ The project has two aims: (1) validate a factor-construction and testing engine 
 
 The emphasis is a faithful replication with transparent methodological choices and honest treatment of data limitations, rather than novel factor discovery.
 
-**Status.** The US baseline engine is validated (below). The Korean data-availability groundwork is complete; the Korean ETL and factor construction are in progress. Korean factor results are forthcoming.
+## Status
+
+Progress is tracked through internal milestones; the project is currently **through P4** — the
+full Korean factor pipeline is built and its *construction* is validated, with results
+interpretation and exhaustive sensitivity analysis still to come.
+
+| Stage | Item | State |
+|---|---|---|
+| US baseline | engine correctness on Kenneth French 25×5 (GRS, HAC, Monte Carlo) | ✅ validated |
+| 5a | Korean ETL — point-in-time panel (KOSPI+KOSDAQ / KOSPI-only) | ✅ complete |
+| 5b | factor construction + 25-portfolio time-series regressions + GRS | ✅ complete |
+| 6b-alt | construction cross-checked against Korean prior studies | ✅ verdict **consistent** |
+| 6a | engineering regression tests (`pytest`) | ✅ 37/37 passing |
+
+**Important framing.** The US baseline is a genuine *validation* (published benchmarks
+reproduced). The Korean side, at this stage, is a validated *construction* — the pipeline's
+signs, magnitudes, and regression structure line up with the Korean literature — **not** a
+validated set of premium estimates. Because the free data stack omits delisted-security
+returns, every Korean number is a **survivorship-biased upper bound**, not a point estimate of
+the true premium (see [Findings](#findings-preliminary--survivorship-biased-upper-bound) and
+[Limitations](#limitations)).
+
+**Next.** Results interpretation and full sensitivity analysis (alpha surface, sub-period
+decomposition, hypothesis contrasts), then a written report, then a "gold" data upgrade
+(delisting-return correction, decomposed book equity, dual-listing adjustment).
 
 ## Data sources
 
@@ -59,10 +83,12 @@ src/
   ff_kr_transform.py         # Korea T (Transform): T1–T10 point-in-time clean panel
   ff_kr_load.py              # Korea L (Load): §9 monthly-long panel + parquet/sqlite/csv
   ff_kr_orchestrate.py       # full-period driver: per-year chunked, resumable (process-per-chunk)
+  ff_kr_factors.py           # Korea 5b: monthly RF + MKT-RF/SMB/HML + 25 portfolios (built on ff_core)
   pilot_transform.py         # one-rebalance (2010-06) T+L pilot / validation harness
   boundary_pilots.py         # window/KOSDAQ-onset boundary validation (2003/2005/2006)
 tests/
   validate_core_mc.ipynb     # Monte Carlo validation of the engine (size + power)
+  test_ff_kr.py              # pytest regression suite: factor math, RF, C1-R gates, engine golden
 notebooks/
   pykrx_probe.ipynb                # KRX data-depth probe
   compare_krx_opendart_bm.ipynb    # KRX-P/B vs OpenDART-BE agreement check
@@ -88,6 +114,48 @@ Requirements: Python 3.12; pykrx, OpenDartReader, FinanceDataReader, PublicDataR
 **Engine (Monte Carlo).** Empirical rejection rate 0.0500 at the 5% level under the null; power increases monotonically with injected alpha.
 
 **US baseline (25 size–B/M portfolios, monthly).** Median regression R² = 0.926; small-growth alpha −0.674%/month (t = −4.71); joint GRS F(25, 1170) = 3.275, p = 1.18 × 10⁻⁷ — consistent with the published pattern of a rejected zero-alpha null driven by the small-growth corner.
+
+**Korean construction — validated against prior studies (not a results claim).** The Korean
+factors and 25-portfolio regressions were cross-checked, on like-for-like overlap windows,
+against two published Korean FF studies (Rugwiro & Choi 2018; Lee, Lee & Ok 2008). The
+pipeline reproduces their **signs**, the correct **order of magnitude**, the negative
+SMB↔market correlation, and the textbook regression structure (SMB loadings rising as size
+falls; HML loadings rising as book-to-market rises; the three-factor R² lift over a
+market-only model matching the prior study to within a few points). The verdict is that the
+**construction is consistent with the Korean literature** — this validates the pipeline, not
+the premium magnitudes, which remain survivorship-biased upper bounds. A `pytest` suite
+(37/37) pins these gates plus the engine golden against regression.
+
+## Findings (preliminary · survivorship-biased upper bound)
+
+These are **directional, preliminary** observations from the current free-data pipeline, not
+premium estimates. Every magnitude is an **upper bound** on the survivorship-clean truth (free
+data omits delisted-security returns, which concentrate in small, distressed, low-valuation
+names — biasing SMB and HML upward). Full point estimates with exhaustive sensitivity are
+deferred to the results phase (6c); numbers below are illustrative and carry that caveat.
+
+- **Size (SMB).** The Korean size premium is **weak to statistically insignificant** in the
+  value-weighted primary series — echoing the muted/insignificant size effect reported in the
+  Korean literature. Adding KOSDAQ does not meaningfully strengthen it.
+- **Value (HML).** A **positive** value tilt is present and the more robust of the two spreads,
+  again matching the direction in prior Korean work — but as an upper bound, not evidence that
+  "the value premium holds in Korea."
+- **Model adequacy (GRS).** The three-factor model **does not fully price** the 25 size–B/M
+  portfolios: the joint zero-alpha null is rejected in both panels, with the largest
+  mispricing in the **small-growth** corner — the same corner that drives the US rejection.
+- **Regression structure.** Factor loadings are monotone and textbook (SMB loading decreasing
+  in size, HML loading increasing in book-to-market), and the three-factor model lifts median
+  R² substantially over a market-only model.
+
+## Roadmap
+
+- **Results & sensitivity (6c).** Alpha surface / heatmap, sub-period decomposition,
+  capex-exclusion and breakpoint-universe robustness, low-delisting-window survivorship
+  sensitivity, and explicit hypothesis contrasts against the Korean literature.
+- **Written report.** Consolidated methodology, results-as-upper-bounds, and limitations.
+- **"Gold" data upgrade.** Delisting-return correction (removing the survivorship ceiling),
+  decomposed OpenDART book equity replacing the KRX-P/B B/M approximation, dividend-inclusive
+  total returns, and a dual-listing / holding-company adjustment.
 
 ## Data notes — KRX cross-section reliability
 
