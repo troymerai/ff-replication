@@ -58,6 +58,12 @@ results/ports25_*
 results/cells2x3_*
 results/regression_*
 results/grs_summary.json
+# 6c analysis-layer outputs — regenerable from src/ff_kr_analysis.py (heatmaps, sub-period
+# decomposition, capex/survivorship sensitivity, hypothesis contrast table)
+results/heatmap_alpha*
+results/subperiod_factors.csv
+results/sensitivity_*.csv
+results/hypothesis_table.md
 results/orchestrate_audit.json
 results/orchestrate_report.txt
 results/boundary_pilots.txt
