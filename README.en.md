@@ -10,7 +10,7 @@ Because free data omits delisted-security returns, every Korean number is treate
 
 Background, method, results, and limitations are all in the report (Korean).
 
-**[Report PDF](report/Replication of the Fama-French Three-Factor Model in the Korean Stock Market.pdf)**
+**[Report PDF](report/Replication_of_the_Fama-French_Three-Factor_Model_in_the_Korean_Stock_Market.pdf)**
 
 ## Repository structure
 
