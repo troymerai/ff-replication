@@ -14,9 +14,8 @@ Consumes the E-layer raw cross-sections and produces a point-in-time clean panel
     T8  trading halts handled for return calc only (no liquidity screen)
     T9  breakpoints (size median / B/M 30-70; breakpoint universe parameterized)
     T10 portfolio assignment: 5x5 (size x B/M) test assets + 2x3 factor grid
-
-Methodology decisions (D1-D11) and the resolution of the handover's open items (financials
-source, dividend handling, adjusted close) are documented in CC_REPORT.md.
+    
+    
 
 Financials are identified from KRX-DESC.Industry (KSIC) unioned with the KRX-DELISTING
 Industry labels; financial holding companies are excluded while industrial holdcos are

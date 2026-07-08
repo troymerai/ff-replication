@@ -1,0 +1,10 @@
+﻿factor,test,estimate_pp,stat,df,p,T,lag
+HML,a_gfc_vs_post,0.755,1.13,1,0.2596,228,4
+HML,b_joint3,,4.82,2,0.0897,240,4
+HML,c_joint5_ref,,7.66,4,0.1048,240,4
+SMB,a_gfc_vs_post,-0.446,-0.43,1,0.6708,228,4
+SMB,b_joint3,,6.05,2,0.0486,240,4
+SMB,c_joint5_ref,,7.07,4,0.1323,240,4
+MKT-RF,a_gfc_vs_post,-0.459,-0.3,1,0.7636,228,4
+MKT-RF,b_joint3,,2.02,2,0.3637,240,4
+MKT-RF,c_joint5_ref,,12.97,4,0.0114,240,4
