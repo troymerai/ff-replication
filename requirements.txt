@@ -1,24 +1,21 @@
 # Python 3.12 / Windows / VS Code + Jupyter
-
+# Versions pinned to the environment used to produce the reported results.
 
 # --- Numerical / statistics core (GRS + HAC engine, time-series regressions) ---
-numpy
-pandas
-scipy
-statsmodels            # GRS F-test, HAC (Newey-West) standard errors
+numpy==2.5.0
+pandas==2.2.3
+scipy==1.18.0
+statsmodels==0.14.6        # GRS F-test, HAC (Newey-West) standard errors
 
 # --- Visualization (heatmaps, sub-period decomposition) ---
-matplotlib
+matplotlib==3.11.0
 
 # --- Korean market data collection ---
-pykrx                  # prices, market cap, ticker lists, KRX PBR (B/M source). Requires KRX login
-OpenDartReader         # book-equity (BE) loader (controlling-interest equity). Not used by the primary B/M path
-finance-datareader     # delisting history (KRX-DELISTING), current listings (KRX-DESC), delisted-stock prices
-PublicDataReader       # ECOS risk-free CD91 (statistics table 817Y002 / item 010502000)
-
-# --- US baseline ---
-pandas-datareader      # Ken French Data Library loader
+pykrx==1.2.8               # prices, market cap, ticker lists, KRX PBR (B/M source). Requires KRX login
+OpenDartReader==0.2.2      # book-equity (BE) loader (controlling-interest equity). Used only to validate the KRX-PBR B/M
+finance-datareader==0.9.202 # delisting history (KRX-DELISTING), current listings (KRX-DESC), delisted-stock prices
+PublicDataReader==1.1.1.post2  # ECOS risk-free CD91 (statistics table 817Y002 / item 010502000)
 
 # --- Environment / execution ---
-python-dotenv          # loads KRX/OpenDART/ECOS keys from .env
-ipykernel              # Jupyter kernel
+python-dotenv==1.2.2       # loads KRX/OpenDART/ECOS keys from .env
+ipykernel==6.31.0          # Jupyter kernel (for .ipynb execution)
